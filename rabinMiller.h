@@ -20,8 +20,10 @@ int decompose(unsigned long int* s, mpz_t d, mpz_t n);
 //	mpz_t	s
 //	mpz_t	d
 //returns:
-//	int	boolean answer
-int isWitness(mpz_t a, mpz_t n, mpz_t s , mpz_t d);
+//	0	a is not a witness
+//	1	a is a witness
+//	int	error code
+int isWitness(mpz_t a, mpz_t n, unsigned long int *s , mpz_t d);
 
 /*Tests if a number n is prime*/
 //takes:
