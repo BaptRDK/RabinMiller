@@ -57,6 +57,8 @@ int decompose(unsigned long int* s, mpz_t d, mpz_t n)
 	//We clear the local variables
 	mpz_clear(num);
 	mpz_clear(ans);
+
+	return(0);
 }
 
 //returns 1 if a is a miller witness of n, 0 if it is not
@@ -141,7 +143,108 @@ int isWitness(mpz_t a, mpz_t n, unsigned long int *s , mpz_t d)
 
 }
 
+//returns 1 if n is prime, 0 if not, for n > 3
 int isPrime(mpz_t n)
 {
+	//buffer variable
+	mpz_t ans;
+	mpz_init(ans);
+
+	if(mpz_cmp_ui(n, 4) < 0)
+	{
+		//clears allocated memory
+		mpz_clear(ans);
+
+		fprintf(stderr, "isPrime : Error : n must be greater than 3\n");
+		exit(-1);
+	}
+	//else if the input number n is odd
+	else if(mpz_cdiv_q_ui(ans, n, 2) == 0)
+	{
+		//clears allocated memory
+		mpz_clear(ans);
+
+		return(0);
+	}
+
+	//clears ans
+	mpz_clear(ans);
+
+
+	mpz_t d, a;
+	unsigned long int s = 0;
+	mpz_inits(d, a, NULL);
+	int i;
+
+	if(decompose(&s, d, n) != 0)
+	{
+		//clears allocated memory
+		mpz_clear(d);
+
+		fprintf(stderr, "isPrime : Error\n");
+		return(-1);
+	}
+
+	if(mpz_cmp_ui(n, 68) < 0)
+	{
+		for(i=2; i<66; i++);
+		{
+			mpz_set_ui(a, i);
+			
+			if(isWitness(a, n, &s, d) == 1)
+			{
+				//clears allocated memory
+				mpz_clears(d, a, NULL);
+				return(0);
+			}	
+		}
+
+
+		//clears allocated memory
+		mpz_clears(d, a, NULL);
+
+		//if we did not find any witness
+		//then n is probably prime
+		return(1);
+	}
+	
+	//if n is greater than 68 then the NIST recommend to do 64 iterations
+	//we take a a randomly in [2; n-2]
+	//We calculate the lenght of n in byte
+	int nbByte = ((strlen(mpz_get_str(NULL,2, n))-1)/8)+ 1;
+	char * seed = malloc(sizeof(char)*nbByte);
+	mpz_t seedMpz;
+	mpz_t highLim;
+	gmp_randstate_t state;
+	gmp_randinit_default(state);
+
+	mpz_inits(seedMpz, highLim, NULL);
+	mpz_sub_ui(highLim, n, 3);
+
+	FILE * randomFic = NULL;
+
+	for(i=0; i<65; i++)
+	{
+		randomFic = fopen("/dev/urandom", "r");
+		fread(seed, 1, nbByte, randomFic);
+		mpz_set_ui(seedMpz, (unsigned long int)seed);
+		gmp_randseed(state, seedMpz);
+		mpz_urandomb(a, state, nbByte);
+		mpz_mod(a, a, highLim);
+		mpz_add_ui(a, a, 2);
+
+		if(isWitness(a, n, &s, d) == 1)
+		{
+			//clears allocated memory
+			mpz_clears(seedMpz, highLim, d, a, NULL);
+			return(0);
+		}
+		
+	}	
+	mpz_clears(a, d, highLim, seedMpz, NULL);
+	close(randomFic);
+	free(seed);
+	return(1);
+
 
 }
