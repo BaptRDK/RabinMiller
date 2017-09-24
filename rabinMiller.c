@@ -1,14 +1,14 @@
 /*rabinMiller.c*/
 #include "rabinMiller.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
 
-
+//decomposes n into s and d like (n-1) = (2**s)*d
 int decompose(unsigned long int* s, mpz_t d, mpz_t n)
 {
+	//just a buffer variable
 	mpz_t ans;
 	mpz_init(ans);
+
+	//rest of the divisions
 	unsigned long int modulo;
 	
 
@@ -24,7 +24,7 @@ int decompose(unsigned long int* s, mpz_t d, mpz_t n)
 		fprintf(stderr, "Error : n must be greater than 2\n");
 		exit(2);
 	}
-
+	
 	mpz_t num;
 	mpz_init(num);
 	*s = 1;
@@ -41,14 +41,14 @@ int decompose(unsigned long int* s, mpz_t d, mpz_t n)
 
 	//do while d is a round number
 	}while(modulo == 0);
-
-	*s = *s -1;
-	mpz_cdiv_q_ui(d, num, 1 << *s);
-	printf("s = %ld\n", *s); 
-	printf("d = ");
-	mpz_out_str(stdout, 10, d);
-	printf("\n");
 	
+	//s takes the previous, valid, exponent
+	*s = *s -1;
+
+	//d takes the last valid value (we recalculate it)
+	mpz_cdiv_q_ui(d, num, 1 << *s);
+
+	//We clear the local variables
 	mpz_clear(num);
 	mpz_clear(ans);
 }

@@ -1,5 +1,7 @@
 #ifndef RABINMILLER_H
 #define RABINMILLER_H
+#include <stdio.h>
+#include <stdlib.h>
 #include <gmp.h>
 
 /*Decomposes an integer n in s and d like (n-1)=(2^s)*d*/
