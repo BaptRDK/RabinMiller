@@ -184,17 +184,21 @@ int isPrime(mpz_t n)
 		fprintf(stderr, "isPrime : Error\n");
 		return(-1);
 	}
-
+	//if n is less than 68
 	if(mpz_cmp_ui(n, 68) < 0)
 	{
-		for(i=2; i<66; i++);
+		unsigned long int sizeN = mpz_get_ui(n);
+		//we test every number between [2; n-2] for witnesses
+		for(i=2; i<(sizeN-2); i++)
 		{
 			mpz_set_ui(a, i);
-			
+			//if a is a Miller witness	
 			if(isWitness(a, n, &s, d) == 1)
 			{
 				//clears allocated memory
 				mpz_clears(d, a, NULL);
+
+				//then n is not prime
 				return(0);
 			}	
 		}
@@ -211,8 +215,10 @@ int isPrime(mpz_t n)
 	//if n is greater than 68 then the NIST recommend to do 64 iterations
 	//we take a a randomly in [2; n-2]
 	//We calculate the lenght of n in byte
-	int nbByte = ((strlen(mpz_get_str(NULL,2, n))-1)/8)+ 1;
-	char * seed = malloc(sizeof(char)*nbByte);
+	int nbBit = (strlen(mpz_get_str(NULL,2, n)))+ 1;
+	char * seed;
+
+		
 	mpz_t seedMpz;
 	mpz_t highLim;
 	gmp_randstate_t state;
@@ -221,30 +227,41 @@ int isPrime(mpz_t n)
 	mpz_inits(seedMpz, highLim, NULL);
 	mpz_sub_ui(highLim, n, 3);
 
+	//we open the /dev/urandom as our entropy source
 	FILE * randomFic = NULL;
+	randomFic = fopen("/dev/urandom", "r");
 
+	//we test 64 random a for witnesses
 	for(i=0; i<65; i++)
 	{
-		randomFic = fopen("/dev/urandom", "r");
-		fread(seed, 1, nbByte, randomFic);
+		//we read a 32 bit number in /dev/urandom, to use as seed
+		fread(&seed, 1, sizeof(unsigned long int), randomFic);
 		mpz_set_ui(seedMpz, (unsigned long int)seed);
 		gmp_randseed(state, seedMpz);
-		mpz_urandomb(a, state, nbByte);
+
+		//we generate our random number
+		mpz_urandomb(a, state, nbBit);
 		mpz_mod(a, a, highLim);
 		mpz_add_ui(a, a, 2);
-
+		
+		//if a is a Miller witness
 		if(isWitness(a, n, &s, d) == 1)
 		{
 			//clears allocated memory
 			mpz_clears(seedMpz, highLim, d, a, NULL);
+			close(randomFic);
+
+			//then n is not prime
 			return(0);
 		}
 		
+		
 	}	
+	
+	//clears allocated memory
 	mpz_clears(a, d, highLim, seedMpz, NULL);
 	close(randomFic);
-	free(seed);
+
+	//if we arrive here, then n is probably prime
 	return(1);
-
-
 }
